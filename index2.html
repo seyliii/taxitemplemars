@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taxi Templemars - Votre Chauffeur dans la Métropole Lilloise</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- LeafletJS (pour la carte interactive) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- Leaflet Routing Machine (pour tracer les trajets) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+        .leaflet-routing-container {
+            background-color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .address-suggestions {
+            position: absolute;
+            background-color: white;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .address-suggestions div {
+            padding: 0.75rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+        .address-suggestions div:hover {
+            background-color: #f3f4f6;
+        }
+        /* Animations et transitions */
+        .fade-in-section {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        .fade-in-section.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .service-card {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        .service-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-800">
+
+    <!-- En-tête -->
+    <header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold text-gray-900">Taxi Templemars</a>
+            <div class="hidden md:flex items-center space-x-6">
+                <a href="#services" class="text-gray-600 hover:text-blue-600 transition duration-300">Nos Services</a>
+                <a href="#simulateur" class="text-gray-600 hover:text-blue-600 transition duration-300">Simulateur</a>
+                <a href="#contact" class="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition-all duration-300 shadow-md hover:shadow-lg">Contact</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Section principale -->
+    <main>
+        <!-- Section Héros -->
+        <section class="relative h-[60vh] min-h-[400px] text-white flex items-center justify-center">
+            <div class="absolute inset-0 bg-cover bg-center bg-no-repeat" style="background-image: url('Lille.jpg');"></div>
+            <div class="absolute inset-0 bg-black/60"></div>
+            <div class="relative z-10 text-center px-4">
+                <h1 class="text-4xl md:text-6xl font-bold mb-4 animate-fade-in-down">Votre taxi à Templemars et dans la métropole lilloise</h1>
+                <p class="text-lg md:text-xl mb-8 animate-fade-in-up">Trajets ponctuels, fiables et confortables pour toutes vos destinations.</p>
+                <a href="#contact" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300 transform hover:scale-105">Réserver une course</a>
+            </div>
+        </section>
+
+        <!-- Section Services -->
+         <section id="services" class="py-16 bg-white">
+            <div class="absolute inset-0 bg-cover bg-center bg-no-repeat" style="background-image: url('Lille.jpg');"></div>
+            <div class="container mx-auto px-6 text-center">
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div class="service-card fade-in-section bg-blue-50 border border-blue-200 p-8 rounded-lg shadow-sm text-center" style="transition-delay: 100ms;">
+                        <div class="mb-4 inline-flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 text-blue-600">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Transferts Gares & Aéroports</h3>
+                        <p class="text-gray-600">Rejoignez facilement les gares de Lille Flandres, Lille Europe et l'aéroport de Lille-Lesquin en toute sérénité.</p>
+                    </div>
+                    <div class="service-card fade-in-section bg-green-50 border border-green-200 p-8 rounded-lg shadow-sm text-center" style="transition-delay: 200ms;">
+                        <div class="mb-4 inline-flex items-center justify-center h-16 w-16 rounded-full bg-green-100 text-green-600">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Trajets professionnels</h3>
+                        <p class="text-gray-600">Déplacez-vous pour vos rendez-vous d'affaires. Nous assurons ponctualité et discrétion.</p>
+                    </div>
+                    <div class="service-card fade-in-section bg-indigo-50 border border-indigo-200 p-8 rounded-lg shadow-sm text-center" style="transition-delay: 300ms;">
+                         <div class="mb-4 inline-flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100 text-indigo-600">
+                           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 16.382V5.618a1 1 0 00-1.447-.894L15 7m-6 3v10m6-10v10m0 0l6-3m-6 3L9 7"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Toutes distances</h3>
+                        <p class="text-gray-600">Besoin d'un trajet dans la métropole lilloise ou plus loin ? Nous sommes à votre disposition 24h/7j.</p>
+                    </div>
+                    <div class="service-card fade-in-section bg-red-50 border border-red-200 p-8 rounded-lg shadow-sm text-center" style="transition-delay: 400ms;">
+                         <div class="mb-4 inline-flex items-center justify-center h-16 w-16 rounded-full bg-red-100 text-red-600">
+                           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Transport Médical Conventionné</h3>
+                        <p class="text-gray-600">Nous sommes conventionnés par la CPAM pour assurer vos transports médicaux (consultations, hospitalisations...).</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- Section Simulateur de Tarif -->
+        <section id="simulateur" class="py-20 bg-gray-50 border-t border-b border-gray-200">
+             <div class="container mx-auto px-6 fade-in-section">
+                <h2 class="text-3xl font-bold text-center mb-2">Estimez le tarif de votre course</h2>
+                <p class="text-gray-600 text-center mb-10">Planifiez votre budget en quelques clics.</p>
+
+                <div class="bg-white p-8 rounded-lg shadow-2xl border">
+                    <div class="grid md:grid-cols-2 gap-8 items-start">
+                        <div>
+                            <div class="mb-4 relative" id="start-container">
+                                <label for="start" class="block text-sm font-medium text-gray-700">Point de départ</label>
+                                <input id="start" type="text" autocomplete="off" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Ex: 1 Rue de la Paix, Templemars">
+                            </div>
+                            <div class="mb-6 relative" id="end-container">
+                                <label for="end" class="block text-sm font-medium text-gray-700">Destination</label>
+                                <input id="end" type="text" autocomplete="off" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Ex: Gare Lille Flandres">
+                            </div>
+
+                            <div class="mb-6">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Type de tarif</label>
+                                <div class="flex flex-wrap gap-4" id="tarif-options">
+                                    <div><input type="radio" name="tarif" value="C" id="tarifC" class="mr-2"><label for="tarifC">Tarif C (jour, aller simple)</label></div>
+                                    <div><input type="radio" name="tarif" value="D" id="tarifD" class="mr-2"><label for="tarifD">Tarif D (nuit/férié, aller simple)</label></div>
+                                </div>
+                            </div>
+                            
+                            <button id="calculate-btn" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300 transform hover:scale-105">Calculer le trajet</button>
+                            
+                            <div id="result" class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md hidden">
+                                <h4 class="font-bold text-lg">Estimation du trajet :</h4>
+                                <p>Distance : <span id="distance" class="font-semibold">...</span> km</p>
+                                <p>Durée : <span id="duration" class="font-semibold">...</span> minutes</p>
+                                <p class="text-2xl font-bold mt-2">Prix estimé : <span id="price" class="text-blue-600">...</span> €*</p>
+                                <p class="text-xs text-gray-500 mt-2">* Ce tarif est une estimation. Le tarif minimum d'une course est de 7.00 €. Des frais supplémentaires peuvent s'appliquer (bagages, 4ème passager...). Le prix final est celui affiché au compteur.</p>
+                            </div>
+                            <div id="error" class="mt-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-md hidden"></div>
+                        </div>
+
+                        <!-- Carte -->
+                        <div id="map" class="h-96 md:h-full rounded-lg shadow-md z-0"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Contact -->
+        <section id="contact" class="relative py-20 text-white">
+            <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1620584210334-367a72315a2f?q=80&w=1974&auto=format&fit=crop');"></div>
+            <div class="absolute inset-0 bg-black opacity-70"></div>
+            <div class="relative z-10 container mx-auto px-6 text-center fade-in-section">
+                <h2 class="text-3xl font-bold mb-4">Contactez-nous pour réserver</h2>
+                <p class="text-gray-300 mb-8 max-w-2xl mx-auto">Pour toute demande d'information ou pour réserver votre taxi, n'hésitez pas à nous appeler ou à nous envoyer un e-mail.</p>
+                <div class="flex flex-col md:flex-row justify-center items-center gap-8">
+                    <a href="tel:0669185818" class="bg-green-500 text-white px-8 py-4 rounded-lg font-bold text-xl hover:bg-green-600 transition duration-300 transform hover:scale-105 shadow-lg">
+                        📞 Appeler : 06 69 18 58 18
+                    </a>
+                    <a href="mailto:taxitemplemars@gmail.com" class="bg-gray-600 text-white px-8 py-4 rounded-lg font-bold text-xl hover:bg-gray-700 transition duration-300 transform hover:scale-105 shadow-lg">
+                        ✉️ E-mail : taxitemplemars@gmail.com
+                    </a>
+                </div>
+                <div class="mt-10">
+                    <p class="text-lg text-gray-200 mb-4">...ou contactez-nous sur WhatsApp</p>
+                    <div class="bg-white p-2 rounded-lg inline-block shadow-lg">
+                        <img src="QR_Code_TAXI.png" alt="QR Code WhatsApp Taxi Templemars" class="w-40 h-40">
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Pied de page -->
+    <footer class="bg-gray-900 text-white py-6">
+        <div class="container mx-auto px-6 text-center">
+            <p>&copy; 2025 Taxi Templemars. Tous droits réservés.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const LILLE_COORDS = [50.63, 3.06];
+            const map = L.map('map').setView(LILLE_COORDS, 10);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            L.circle(LILLE_COORDS, {
+                color: 'blue',
+                fillColor: '#3b82f6',
+                fillOpacity: 0.2,
+                radius: 20000
+            }).addTo(map).bindPopup('<b>Zone d\'activité principale</b><br>Métropole Lilloise et alentours.');
+
+            const startInput = document.getElementById('start');
+            const endInput = document.getElementById('end');
+            const calculateBtn = document.getElementById('calculate-btn');
+            const resultDiv = document.getElementById('result');
+            const errorDiv = document.getElementById('error');
+            
+            let routingControl = null;
+            let searchTimeout = null;
+
+            const TARIFS = {
+                prise_en_charge: 8.00,
+                minimum_course: 7.00,
+               C: 2.18, D: 2.80
+            };
+
+            const setupAddressSearch = (inputElement, containerElement) => {
+                inputElement.addEventListener('input', () => {
+                    clearTimeout(searchTimeout);
+                    const query = inputElement.value;
+                    inputElement.removeAttribute('data-lat');
+                    inputElement.removeAttribute('data-lon');
+                    if (query.length < 3) {
+                        removeSuggestions(containerElement);
+                        return;
+                    }
+                    searchTimeout = setTimeout(async () => {
+                        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=fr&viewbox=2.5,51,3.5,50.2`);
+                        const suggestions = await response.json();
+                        showSuggestions(suggestions, inputElement, containerElement);
+                    }, 300);
+                });
+            };
+
+            const showSuggestions = (suggestions, inputElement, containerElement) => {
+                removeSuggestions(containerElement);
+                const suggestionsContainer = document.createElement('div');
+                suggestionsContainer.className = 'address-suggestions';
+                suggestions.slice(0, 5).forEach(suggestion => {
+                    const item = document.createElement('div');
+                    item.textContent = suggestion.display_name;
+                    item.addEventListener('click', () => {
+                        inputElement.value = suggestion.display_name;
+                        inputElement.dataset.lat = suggestion.lat;
+                        inputElement.dataset.lon = suggestion.lon;
+                        removeSuggestions(containerElement);
+                    });
+                    suggestionsContainer.appendChild(item);
+                });
+                if (suggestions.length > 0) {
+                    containerElement.appendChild(suggestionsContainer);
+                }
+            };
+
+            const removeSuggestions = (containerElement) => {
+                const existingSuggestions = containerElement.querySelector('.address-suggestions');
+                if (existingSuggestions) {
+                    existingSuggestions.remove();
+                }
+            };
+            
+            document.addEventListener('click', (e) => {
+                if (!document.getElementById('start-container').contains(e.target)) {
+                    removeSuggestions(document.getElementById('start-container'));
+                }
+                 if (!document.getElementById('end-container').contains(e.target)) {
+                    removeSuggestions(document.getElementById('end-container'));
+                }
+            });
+
+            setupAddressSearch(startInput, document.getElementById('start-container'));
+            setupAddressSearch(endInput, document.getElementById('end-container'));
+
+            calculateBtn.addEventListener('click', () => {
+                const startLat = startInput.dataset.lat;
+                const startLon = startInput.dataset.lon;
+                const endLat = endInput.dataset.lat;
+                const endLon = endInput.dataset.lon;
+
+                if (!startLat || !startLon || !endLat || !endLon) {
+                    showError("Veuillez sélectionner un point de départ et une destination valides depuis les suggestions.");
+                    return;
+                }
+                
+                hideError();
+                resultDiv.classList.add('hidden');
+                calculateBtn.textContent = 'Calcul en cours...';
+                calculateBtn.disabled = true;
+
+                if (routingControl) {
+                    map.removeControl(routingControl);
+                }
+                
+                // On définit explicitement le routeur à utiliser
+                const router = L.Routing.osrmv1({
+                    serviceUrl: 'https://router.project-osrm.org/route/v1',
+                    profile: 'driving' // On force le profil 'voiture'
+                });
+
+                routingControl = L.routing.control({
+                    waypoints: [ L.latLng(startLat, startLon), L.latLng(endLat, endLon) ],
+                    router: router, // On passe notre routeur configuré
+                    routeWhileDragging: false, show: false, addWaypoints: false,
+                    lineOptions: { styles: [{color: 'blue', opacity: 0.8, weight: 6}] }
+                }).addTo(map);
+
+                routingControl.on('routesfound', function(e) {
+                    const route = e.routes[0];
+                    const distance = route.summary.totalDistance / 1000;
+                    const duration = Math.round(route.summary.totalTime / 60);
+                    const selectedTarif = document.querySelector('input[name="tarif"]:checked').value;
+                    const tarifKm = TARIFS[selectedTarif];
+                    let price = TARIFS.prise_en_charge + (distance * tarifKm);
+                    if (price < TARIFS.minimum_course) { price = TARIFS.minimum_course; }
+                    document.getElementById('distance').textContent = distance.toFixed(1);
+                    document.getElementById('duration').textContent = duration;
+                    document.getElementById('price').textContent = price.toFixed(2);
+                    resultDiv.classList.remove('hidden');
+                    resetButton();
+                });
+
+                routingControl.on('routingerror', (e) => {
+                    showError("Impossible de trouver un itinéraire entre ces deux points.");
+                    resetButton();
+                });
+            });
+            
+            function resetButton() {
+                 calculateBtn.textContent = 'Calculer le trajet';
+                 calculateBtn.disabled = false;
+            }
+            function showError(message) {
+                errorDiv.textContent = message;
+                errorDiv.classList.remove('hidden');
+                resetButton();
+            }
+            function hideError() {
+                errorDiv.classList.add('hidden');
+            }
+
+            // --- NOUVEAU : LOGIQUE POUR LES ANIMATIONS AU DÉFILEMENT ---
+            const sections = document.querySelectorAll('.fade-in-section');
+            const observer = new IntersectionObserver(entries => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
